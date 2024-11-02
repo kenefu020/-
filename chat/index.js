@@ -1,21 +1,18 @@
-// WebSocket接続
 const ws = new WebSocket('ws://localhost:3000');
+const chatDiv = document.getElementById('chat');
 let uuid = null;
 
-// メッセージ受信処理
 ws.onmessage = (event) => {
   const json = JSON.parse(event.data);
   console.log(json);
   if (json.uuid) {
     uuid = json.uuid;
   } else {
-    const chatDiv = document.getElementById('chat');
     chatDiv.appendChild(createMessage(json));
     chatDiv.scrollTo(0, chatDiv.scrollHeight);
   }
 };
 
-// メッセージ送信処理
 function sendMessage() {
   const now = new Date();
   const json = {
@@ -23,12 +20,10 @@ function sendMessage() {
     message: document.getElementById('msgInput').value,
     time: `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`,
   };
-  // メッセージ送信
   ws.send(JSON.stringify(json));
   document.getElementById('msgInput').value = '';
 }
 
-// ここから下はDOM生成処理（メッセージ受信後のDOM生成）
 function createMessage(json) {
   const side = json.mine ? 'mine' : 'other';
   const sideElement = createDiv(side);
