@@ -1,55 +1,56 @@
-var BAAS = BAAS || {};
+var CHAT = CHAT || {};
 
-BAAS.cocoa = {
- init:function(){
-  this.setParameters();
-  this.bindEvent();
- },
+CHAT.fire = {
+  init:function(){
+    this.setParameters();
+    this.bindEvent();
+  },
 
- setParameters:function(){
-  this.$name = $('#jsi-name');
-  this.$textArea = $('#jsi-msg');
-  this.$board = $('#jsi-board');
-  this.$button = $('#jsi-button');
+  setParameters:function(){
+    this.$name = $('#jsi-name');
+    this.$textArea = $('#jsi-msg');
+    this.$board = $('#jsi-board');
+    this.$button = $('#jsi-button');
 
-  //各自登録時に出たコードに書き換え。「chatRoom」は任意でok。複数の部屋を作りたい場合はここを動的にする。
-  this.chatDataStore = new MilkCocoa('各自').dataStore('chatRoom');
- },
+    //データベースと接続する。各自登録時に出たコードに書き換え。
+    this.chatDataStore = new Firebase('https://<各自>.firebaseio.com/');
+  },
 
- bindEvent:function(){
-  var self = this;
-  this.$button.on('click',function(){ //トークを送信
-   self.sendMsg();
-  });
+  bindEvent:function(){
+    var self = this;
+    this.$button.on('click',function(){
+      self.sendMsg();
+    });
 
-  this.chatDataStore.on('push',function(data){ //発言者・トークを監視
-   self.addText(data.value.user);
-   self.addText(data.value.message);
-  });
- },
+    //DBの「talks」から取り出す
+    this.chatDataStore.child('talks').on('child_added',function(data){
+      var json = data.val();
+      self.addText(json['user']);
+      self.addText(json['message']);
+    });
+  },
 
- //ユーザー、メッセージ送信
- sendMsg:function(){
-  if (this.$textArea.val() == ''){ return }
+  //ユーザー、メッセージ送信
+  sendMsg:function(){
+    var self = this;
+    if (this.$textArea.val() == ''){ return }
 
-  var self = this;
-  var name = this.$name.val();
-  var text = this.$textArea.val();
+    var name = this.$name.val();
+    var text = this.$textArea.val();
 
-  self.chatDataStore.push({user:name, message:text},function(data){
-   self.$textArea.val('');
-  });
- },
+    //データベースの中の「talks」に値を送り格納（'talks'は各自任意に設定可能）
+    self.chatDataStore.child('talks').push({user:name, message:text});
+    self.$textArea.val('');
+  },
 
- //受け取り後の処理
- addText:function(json){
+  //受け取り後の処理
+  addText:function(json){
    var msgDom = $('<li>');
    msgDom.html(json);
    this.$board.append(msgDom[0]);
- }
+  }
 }
 
 $(function(){
- BAAS.cocoa.init();
+  CHAT.fire.init();
 });
-
